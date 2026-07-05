@@ -49,6 +49,7 @@ function hasDocumentStructure(node) {
 
 function toPageLabel(key, value) {
   const keyStr = String(key);
+  if (/^pages$/i.test(keyStr) && !isPrimitive(value)) return "";
   const match = keyStr.match(/page\s*([0-9]+)/i) || keyStr.match(/([0-9]+)/);
   if (match) return `Page ${match[1]}`;
 
@@ -78,15 +79,33 @@ function normalizeWithStructure(node) {
       return;
     }
 
+    const currentHasPageField = Object.keys(current).some((k) => {
+      const lower = k.toLowerCase();
+      return lower !== "pages" && lower.includes("page");
+    });
+
     for (const [key, value] of Object.entries(current)) {
       const lower = key.toLowerCase();
 
       if (lower.includes("page")) {
+        if (lower === "pages" && !isPrimitive(value)) {
+          walk(value, insidePage);
+          continue;
+        }
+
+        const pageLabel = toPageLabel(key, value);
+        if (!pageLabel) {
+          walk(value, insidePage);
+          continue;
+        }
+
         if (lines.length > 0 && lines[lines.length - 1] !== "") {
           lines.push("");
         }
-        lines.push(toPageLabel(key, value));
-        walk(value, true);
+        lines.push(pageLabel);
+        if (!isPrimitive(value)) {
+          walk(value, true);
+        }
         continue;
       }
 
@@ -99,13 +118,13 @@ function normalizeWithStructure(node) {
         continue;
       }
 
-      if (insidePage && isPrimitive(value)) {
+      if ((insidePage || currentHasPageField) && isPrimitive(value)) {
         const text = primitiveToString(value).trim();
         if (text) lines.push(`${formatKey(key)}: ${text}`);
         continue;
       }
 
-      walk(value, insidePage);
+      walk(value, insidePage || currentHasPageField);
     }
   }
 
