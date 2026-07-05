@@ -148,17 +148,36 @@ function main() {
   const [, , inputPath, outputPath] = process.argv;
 
   if (!inputPath || !outputPath) {
-    console.error("Usage: node normalizeJSON.js <input.json> <output.txt>");
+    console.error(
+      "Usage: ./normalizeJSON.js <input.json> <output.txt> (or: node normalizeJSON.js <input.json> <output.txt>)"
+    );
+    process.exit(1);
+  }
+
+  const resolvedInputPath = path.resolve(inputPath);
+  const resolvedOutputPath = path.resolve(outputPath);
+
+  let input;
+  try {
+    input = fs.readFileSync(resolvedInputPath, "utf8");
+  } catch (error) {
+    console.error(`Error reading input file "${resolvedInputPath}": ${error.message}`);
+    process.exit(1);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(input);
+  } catch (error) {
+    console.error(`Error parsing JSON from "${resolvedInputPath}": ${error.message}`);
     process.exit(1);
   }
 
   try {
-    const input = fs.readFileSync(path.resolve(inputPath), "utf8");
-    const data = JSON.parse(input);
     const normalized = normalizeJSON(data);
-    fs.writeFileSync(path.resolve(outputPath), `${normalized}\n`, "utf8");
+    fs.writeFileSync(resolvedOutputPath, `${normalized}\n`, "utf8");
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error writing output file "${resolvedOutputPath}": ${error.message}`);
     process.exit(1);
   }
 }
