@@ -6,7 +6,7 @@ NodeJS for LLM
 Use `normalizeJSON.js` to convert a JSON document into normalized text for downstream embedding workflows:
 
 ```bash
-node /home/runner/work/llm/llm/normalizeJSON.js input.json output.txt
+node normalizeJSON.js input.json output.txt
 ```
 
 Behavior:
