@@ -5,8 +5,8 @@ const path = require("path");
 
 function stripTags(value) {
   return value
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style\s*>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -28,9 +28,9 @@ function extractRows(tableHtml, minTdCount) {
   const trMatches = tableHtml.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
   return trMatches
     .map((tr) => {
-      const tdMatches = tr.match(/<td\b[\s\S]*?<\/td>/gi) || [];
-      if (tdMatches.length < minTdCount) return null;
-      return tdMatches.slice(0, minTdCount).map((td) => decodeHtmlEntities(stripTags(td)));
+      const cellMatches = tr.match(/<(?:td|th)\b[\s\S]*?<\/(?:td|th)\s*>/gi) || [];
+      if (cellMatches.length < minTdCount) return null;
+      return cellMatches.map((cell) => decodeHtmlEntities(stripTags(cell)));
     })
     .filter(Boolean);
 }
