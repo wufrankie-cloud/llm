@@ -5,8 +5,8 @@ const path = require("path");
 
 function stripTags(value) {
   return value
-    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, " ")
-    .replace(/<style\b[\s\S]*?<\/style\s*>/gi, " ")
+    .replace(/<script\b[\s\S]*?<\/script\b[^>]*>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style\b[^>]*>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -88,7 +88,7 @@ function main() {
   const extracted = extractHTMLTable(html, minRows, minTds);
   if (!extracted) {
     console.error(
-      `No <table> found with at least ${minRows} <tr> rows containing at least ${minTds} <td> cells.`
+      `No <table> found with at least ${minRows} <tr> rows containing at least ${minTds} table cells (<td> or <th>).`
     );
     process.exit(1);
   }

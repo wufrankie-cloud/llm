@@ -23,4 +23,4 @@ Use `extractHTMLTable.js` to extract rows from the first `<table>` that has at l
 node extractHTMLTable.js input.html output.json 3 4
 ```
 
-The command writes JSON objects shaped like `{"td1":"...", "td2":"...", ...}` using all extracted cells from each qualifying row.
+The command writes JSON objects shaped like `{"td1":"...", "td2":"...", ...}` using all extracted cells from each qualifying row, where `td1`, `td2`, etc. are positional field names for extracted table cells.
