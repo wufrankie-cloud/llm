@@ -21,7 +21,55 @@ function decodeHtmlEntities(value) {
     "&#39;": "'",
     "&nbsp;": " ",
   };
-  return value.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => entities[entity] || entity);
+  return value
+    .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => entities[entity] || entity)
+    .replace(/&#(\d+);/g, (_, numeric) => {
+      const codePoint = Number.parseInt(numeric, 10);
+      if (!Number.isFinite(codePoint)) return _;
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return _;
+      }
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint)) return _;
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return _;
+      }
+    });
+}
+
+function extractTableBlocks(html) {
+  const tagRegex = /<\/?table\b[^>]*>/gi;
+  const stack = [];
+  const blocks = [];
+  let match = tagRegex.exec(html);
+
+  while (match) {
+    const tag = match[0];
+    const index = match.index;
+    const isClosing = /^<\s*\/\s*table\b/i.test(tag);
+
+    if (!isClosing) {
+      stack.push(index);
+    } else if (stack.length > 0) {
+      const start = stack.pop();
+      blocks.push({
+        start,
+        html: html.slice(start, tagRegex.lastIndex),
+      });
+    }
+
+    match = tagRegex.exec(html);
+  }
+
+  return blocks
+    .sort((a, b) => a.start - b.start)
+    .map((block) => block.html);
 }
 
 function extractRows(tableHtml, minTdCount) {
@@ -36,7 +84,7 @@ function extractRows(tableHtml, minTdCount) {
 }
 
 function extractHTMLTable(html, minRowCount, minTdCount) {
-  const tableMatches = html.match(/<table\b[\s\S]*?<\/table>/gi) || [];
+  const tableMatches = extractTableBlocks(html);
   for (const table of tableMatches) {
     const rows = extractRows(table, minTdCount);
     if (rows.length >= minRowCount) {
