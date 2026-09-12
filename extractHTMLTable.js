@@ -18,11 +18,13 @@ function decodeHtmlEntities(value) {
     "&lt;": "<",
     "&gt;": ">",
     "&quot;": "\"",
+    "&apos;": "'",
     "&#39;": "'",
     "&nbsp;": " ",
+    "&copy;": "©",
   };
   return value
-    .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => entities[entity] || entity)
+    .replace(/&(?:amp|lt|gt|quot|apos|#39|nbsp|copy);/g, (entity) => entities[entity] || entity)
     .replace(/&#(\d+);/g, (_, numeric) => {
       const codePoint = Number.parseInt(numeric, 10);
       if (!Number.isFinite(codePoint)) return _;
@@ -147,6 +149,11 @@ function extractHTMLTable(html, minRowCount, minTdCount) {
 }
 
 function parsePositiveInt(value, name) {
+  if (!/^[0-9]+$/.test(value)) {
+    console.error(`Invalid ${name}: "${value}". It must be a positive integer.`);
+    process.exit(1);
+  }
+
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     console.error(`Invalid ${name}: "${value}". It must be a positive integer.`);
