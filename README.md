@@ -14,3 +14,13 @@ Behavior:
 - If keys containing `page` or `paragraph` are detected:
   - concatenation starts from `page` keys (for example, `Page 1`)
   - `paragraph` content is emitted as paragraph blocks with line breaks
+
+## HTML table extraction
+
+Use `extractHTMLTable.js` to extract rows from the first `<table>` that has at least the requested number of `<tr>` rows, where each extracted row has at least the requested number of `<td>` cells:
+
+```bash
+node extractHTMLTable.js input.html output.json 3 4
+```
+
+The command writes JSON objects shaped like `{"td1":"...", "td2":"...", ...}` using the first N `<td>` values from each qualifying row.
