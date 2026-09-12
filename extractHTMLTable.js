@@ -73,14 +73,60 @@ function extractTableBlocks(html) {
 }
 
 function extractRows(tableHtml, minTdCount) {
-  const trMatches = tableHtml.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
-  return trMatches
-    .map((tr) => {
-      const cellMatches = tr.match(/<(?:td|th)\b[\s\S]*?<\/(?:td|th)\s*>/gi) || [];
-      if (cellMatches.length < minTdCount) return null;
-      return cellMatches.map((cell) => decodeHtmlEntities(stripTags(cell)));
-    })
-    .filter(Boolean);
+  const tagRegex = /<\/?([a-z0-9]+)\b[^>]*>/gi;
+  const rows = [];
+  let tableDepth = 0;
+  let currentRow = null;
+  let currentCell = null;
+  let lastIndex = 0;
+  let match = tagRegex.exec(tableHtml);
+
+  while (match) {
+    const tag = match[0];
+    const tagName = match[1].toLowerCase();
+    const textChunk = tableHtml.slice(lastIndex, match.index);
+
+    if (currentCell !== null && tableDepth === 1) {
+      currentCell += textChunk;
+    }
+
+    const isClosing = /^<\s*\//.test(tag);
+
+    if (!isClosing) {
+      if (tagName === "table") {
+        tableDepth += 1;
+      } else if (tagName === "tr" && tableDepth === 1 && currentRow === null) {
+        currentRow = [];
+      } else if ((tagName === "td" || tagName === "th") && tableDepth === 1 && currentRow && currentCell === null) {
+        currentCell = "";
+      }
+    } else {
+      if ((tagName === "td" || tagName === "th") && tableDepth === 1 && currentRow && currentCell !== null) {
+        currentRow.push(decodeHtmlEntities(stripTags(currentCell)));
+        currentCell = null;
+      } else if (tagName === "tr" && tableDepth === 1 && currentRow) {
+        if (currentCell !== null) {
+          currentRow.push(decodeHtmlEntities(stripTags(currentCell)));
+          currentCell = null;
+        }
+        rows.push(currentRow);
+        currentRow = null;
+      } else if (tagName === "table" && tableDepth > 0) {
+        tableDepth -= 1;
+      }
+    }
+
+    lastIndex = tagRegex.lastIndex;
+    match = tagRegex.exec(tableHtml);
+  }
+
+  if (currentCell !== null && tableDepth === 1) {
+    currentCell += tableHtml.slice(lastIndex);
+    if (currentRow) currentRow.push(decodeHtmlEntities(stripTags(currentCell)));
+  }
+  if (currentRow) rows.push(currentRow);
+
+  return rows.filter((row) => row.length >= minTdCount);
 }
 
 function extractHTMLTable(html, minRowCount, minTdCount) {
